@@ -7,6 +7,7 @@ const swaggerUi = require('swagger-ui-express');
 
 const userRoutes = require('./routes/user-routes');
 const productRoutes = require('./routes/product-routes');
+const imageRoutes = require('./routes/image-routes');
 const HttpError = require('./models/http-error');
 const bodyParse = require('body-parser');
 const { fileUpload } = require('./middleware/file-upload');
@@ -29,7 +30,7 @@ const options = {
         description: 'Development'
       },
       {
-        url: 'https://elearning-be.herokuapp.com',
+        url: 'https://shoes-shop-app.herokuapp.com/ ',
         description: 'Production'
       }
     ],
@@ -70,6 +71,8 @@ app.use((req, res, next) => {
 app.use('/api/users', userRoutes);
 
 app.use('/api/products', productRoutes);
+
+app.use('/api/images', imageRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);

@@ -1,8 +1,8 @@
 const multer = require('multer');
 const mongoose = require('mongoose');
 const { v4: uuid } = require('uuid');
-const fs = require('fs');
-const { Readable } = require('stream');
+const { GridFsStorage } = require("multer-gridfs-storage");
+const HttpError = require('../models/http-error');
 
 const MIME_TYPE_MAP = {
   'image/png': 'png',
@@ -19,42 +19,77 @@ mongoose.connect('mongodb+srv://everly:xanhduong@elearning.whpyx.mongodb.net/Sho
   })
 })
 
-const fileUpload = async (req, res, next) => {
-  if (bucket) {
-    const imgId = uuid();
-    try {
-      const imageUploadStream = bucket.openUploadStream(imgId);
-      const imageReadableStream = new Readable();
-      imageReadableStream.push(null);
-      if (imageReadableStream[0]) imageReadableStream.pipe(imageUploadStream);
-      console.log('done')
+const imgName = uuid()
+const storage = new GridFsStorage({
+  url: 'mongodb+srv://everly:xanhduong@elearning.whpyx.mongodb.net/ShoeApp?retryWrites=true&w=majority',
+  options: { useNewUrlParser: true, useUnifiedTopology: true },
+  file: (req, file) => {
+    const match = Object.keys(MIME_TYPE_MAP);
+
+    if (match.indexOf(file.mimetype) === -1) {
+      return next(new Error(
+        'image format is not allowed',
+        400
+      ))
     }
-    catch (err) { console.log(err) }
+
+    return {
+      bucketName: 'images',
+      filename: imgName
+    };
   }
-}
+});
+
+const upload = multer({ storage: storage })
+
 
 const fileDownload = async (req, res, next) => {
   mongoose
     .connect('mongodb+srv://everly:xanhduong@elearning.whpyx.mongodb.net/ShoeApp?retryWrites=true&w=majority', function (err, db) {
-      if (err) return console.dir(err);
-
-      const bucket = new mongoose.mongo.GridFSBucket(db, {
-        bucketName: 'images'
-      })
-
-      const imgId = uuid();
-      try {
-        const imageUploadStream = bucket.openUploadStream(imgId);
-        const imageReadableStream = new Readable();
-        imageReadableStream.push(null);
-        imageReadableStream.pipe(imageUploadStream);
-        console.log('done')
+      if (err) {
+        console.dir(err);
+        return next(new HttpError(
+          'Fetching users failed, please try again later.',
+          500
+        ))
       }
-      catch (err) { console.log(err) }
+
+      const imgName = req.params.name;
+      try {
+        const image = db.collection('images.files').findOne({ _id: imgName });
+        if (!image) return next(new HttpError(
+          'No image with this id exist',
+          404
+        ))
+
+        const downloadStream = bucket.openDownloadStreamByName(imgName);
+        downloadStream.on("data", function (data) {
+          return res.status(200).write(data);
+        });
+
+        downloadStream.on("error", function (err) {
+          console.log(err);
+          return next(new HttpError(
+            'Fail to get image',
+            500
+          ))
+        });
+
+        downloadStream.on("end", () => {
+          return res.end();
+        });
+      }
+      catch (err) {
+        console.log(err)
+        return next(new HttpError(
+          'Fail to get image',
+          500
+        ))
+      }
     })
 }
 
 module.exports = {
-  fileUpload,
+  upload,
   fileDownload
 }

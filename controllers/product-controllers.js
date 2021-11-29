@@ -269,11 +269,55 @@ const deteleProducts = async (req, res, next) => {
     res.json(result);
 };
 
+/**
+ * @swagger
+ * /api/products/{pid}:
+ *   post:
+ *     summary: Get product information
+ *     description: Only admin token or auth product token can access.
+ *     consumes:
+ *         - multipart/form-data
+ *     parameters:
+ *         - in: formData
+ *           name: upfile
+ *           type: file
+ *           description: The file to upload.
+ *         - in: path
+ *           name: uid
+ *           required: true
+ *           description: product ID
+ *     responses:
+ *          '200':
+ *              description: OK
+*/
+
+const storeImgName = async (req, res, next) => {
+    const { file } = req;
+    const productId = req.params.productId;
+    const imageName = file.filename;
+    let existingProduct;
+    try {
+        existingProduct = await Product.findOne({ _id: productId })
+        existingProduct.image.push(imageName);
+        existingProduct.save();
+    }
+    catch (err) {
+        console.log(err);
+        const error = new HttpError(
+            'Store image name failed',
+            500
+        );
+        return next(error);
+    }
+    res.json(existingProduct);
+};
+
 
 module.exports = {
     addProduct,
     updateProduct,
     deteleProducts,
     getProducts,
-    getProduct
+    getProduct,
+    storeImgName
 }

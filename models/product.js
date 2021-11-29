@@ -17,7 +17,6 @@ const ProductSchema = new mongoose.Schema({
     },
     image: {
         type: Array,
-        required: 'Image is required as least one',
         trim: true,
     },
     brand: {
