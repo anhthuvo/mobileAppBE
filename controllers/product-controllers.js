@@ -7,6 +7,8 @@ const { validationResult } = require('express-validator');
  * /api/products/add:
  *   post:
  *     summary: Create account
+ *     security: 
+ *         - bearerAuth: []
  *     requestBody:
  *       content:
  *         application/json:
@@ -30,14 +32,14 @@ const { validationResult } = require('express-validator');
  *               inventory: 
  *                  type: number
  *             example:   # Sample object
- *               name: Everly  
- *               description: Vo
+ *               name: Nike Air  
+ *               description: the new model of ths year
  *               detail: abc
- *               image: https//abc.com
+ *               image: [abc.png, aefe.jpeg]
  *               sizes: [35, 67, 90]
  *               brand: Nike
  *               price: 500
- *               inventory: 100
+ *               inventory: 200
  *     responses:
  *          '201':
  *              description: OK
